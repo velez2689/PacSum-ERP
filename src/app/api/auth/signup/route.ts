@@ -11,7 +11,6 @@ import { signupSchema } from '@/lib/auth/validators';
 import { handleError } from '@/lib/errors/error-handler';
 import { UserAlreadyExistsError } from '@/lib/errors/auth-errors';
 import { successResponse } from '@/utils/error-responses';
-import { RateLimiters } from '@/lib/middleware/rate-limiter';
 import { sendVerificationEmail } from '@/lib/email/email-service';
 import { AUDIT_EVENTS } from '@/lib/config/security';
 import { UserRole } from '@/types/auth';
@@ -33,9 +32,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password, firstName, lastName, organizationName } = validation.data;
-
-    // Apply rate limiting
-    await RateLimiters.signup(request);
 
     // Check if user already exists
     const { data: existingUser } = await supabase

@@ -15,7 +15,7 @@ const supabase = createClient(
 );
 
 export async function GET(request: NextRequest) {
-  return requireAuth(request, async (req: _, user) => {
+  return requireAuth(request, async (_req: NextRequest, user) => {
     try {
       // Get full user details
       const { data: userData, error: userError } = await supabase

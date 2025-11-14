@@ -9,7 +9,6 @@ import { generatePasswordResetToken } from '@/lib/auth/token-manager';
 import { handleError } from '@/lib/errors/error-handler';
 import { successResponse } from '@/utils/error-responses';
 import { passwordResetRequestSchema } from '@/lib/auth/validators';
-import { RateLimiters } from '@/lib/middleware/rate-limiter';
 import { sendPasswordResetEmail } from '@/lib/email/email-service';
 import { AUDIT_EVENTS } from '@/lib/config/security';
 
@@ -30,9 +29,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { email } = validation.data;
-
-    // Apply rate limiting
-    await RateLimiters.passwordReset(request, email.toLowerCase());
 
     // Get user (always return success to prevent email enumeration)
     const { data: user } = await supabase

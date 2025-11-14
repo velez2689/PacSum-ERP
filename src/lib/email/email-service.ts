@@ -5,7 +5,6 @@
 
 import sgMail from '@sendgrid/mail';
 import { EmailDeliveryError } from '@/lib/errors/auth-errors';
-import { AUDIT_EVENTS } from '@/lib/config/security';
 
 // Initialize SendGrid
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;

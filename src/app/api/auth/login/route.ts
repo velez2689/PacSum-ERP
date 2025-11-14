@@ -17,7 +17,6 @@ import {
   AccountLockedError
 } from '@/lib/errors/auth-errors';
 import { successResponse } from '@/utils/error-responses';
-import { RateLimiters } from '@/lib/middleware/rate-limiter';
 import { COOKIE_CONFIG, JWT_CONFIG } from '@/lib/config/jwt';
 import { AUDIT_EVENTS } from '@/lib/config/security';
 import { verifyTOTP } from '@/lib/auth/mfa-utils';
@@ -39,11 +38,7 @@ export async function POST(request: NextRequest) {
       return handleError(validation.error);
     }
 
-    const { email, password, mfaCode, rememberMe } = validation.data;
-
-    // Apply rate limiting
-    const identifier = email.toLowerCase();
-    await RateLimiters.login(request, identifier);
+2    const { email, password, mfaCode, rememberMe } = validation.data;
 
     // Get user from database
     const { data: user, error: userError } = await supabase

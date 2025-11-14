@@ -10,7 +10,6 @@ import { generateMFASecret, generateRecoveryCodes, hashRecoveryCode } from '@/li
 import { handleError } from '@/lib/errors/error-handler';
 import { MFAAlreadyEnabledError } from '@/lib/errors/auth-errors';
 import { successResponse } from '@/utils/error-responses';
-import { AUDIT_EVENTS } from '@/lib/config/security';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
