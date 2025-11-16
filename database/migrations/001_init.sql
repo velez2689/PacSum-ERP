@@ -14,6 +14,36 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Enable pgcrypto for password hashing (if needed)
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- Enable pg_trgm for full text search indexes
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+
+-- =============================================================================
+-- CREATE AUTH SCHEMA
+-- =============================================================================
+CREATE SCHEMA IF NOT EXISTS auth;
+
+-- =============================================================================
+-- CREATE SUPABASE-COMPATIBLE ROLES (for local development)
+-- =============================================================================
+DO $$
+BEGIN
+  -- Create authenticated role if it doesn't exist
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticated') THEN
+    CREATE ROLE authenticated;
+  END IF;
+
+  -- Create anon role if it doesn't exist
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'anon') THEN
+    CREATE ROLE anon;
+  END IF;
+
+  -- Create service_role if it doesn't exist
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'service_role') THEN
+    CREATE ROLE service_role;
+  END IF;
+END
+$$;
+
 -- =============================================================================
 -- ORGANIZATIONS TABLE
 -- Multi-tenant support - each organization is a separate tenant

@@ -17,7 +17,7 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  return requireAuth(request, async (req: _, user) => {
+  return requireAuth(request, async (_req: NextRequest, user) => {
     try {
       // Get user details
       const { data: userData, error: userError } = await supabase

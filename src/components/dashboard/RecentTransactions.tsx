@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { formatCurrency, formatEnumValue } from '@/utils/formatting';
 import { formatSmartDate } from '@/utils/date-utils';
@@ -20,11 +20,7 @@ export function RecentTransactions({ orgId, limit = 5 }: RecentTransactionsProps
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [orgId]);
-
-  const fetchTransactions = async (): Promise<void> => {
+  const fetchTransactions = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await apiClient.get<Transaction[]>(
@@ -37,7 +33,11 @@ export function RecentTransactions({ orgId, limit = 5 }: RecentTransactionsProps
     } finally {
       setLoading(false);
     }
-  };
+  }, [orgId, limit]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   if (loading) {
     return (

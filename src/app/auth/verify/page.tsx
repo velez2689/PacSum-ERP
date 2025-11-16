@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,13 +20,7 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState<'idle' | 'verifying' | 'success' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (token) {
-      handleVerification();
-    }
-  }, [token]);
-
-  const handleVerification = async (): Promise<void> => {
+  const handleVerification = useCallback(async (): Promise<void> => {
     if (!token) return;
 
     try {
@@ -40,11 +34,16 @@ export default function VerifyEmailPage() {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Verification failed');
     }
-  };
+  }, [token, verifyEmail, router]);
+
+  useEffect(() => {
+    if (token) {
+      handleVerification();
+    }
+  }, [token, handleVerification]);
 
   const handleResendEmail = async (): Promise<void> => {
     // TODO: Implement resend email functionality
-    console.log('Resend verification email');
   };
 
   if (status === 'verifying') {

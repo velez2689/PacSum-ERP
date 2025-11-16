@@ -7,7 +7,7 @@ import { Upload, FileText, FolderOpen } from 'lucide-react';
 /**
  * Documents page
  */
-export default function DocumentsPage({ params }: { params: { orgId: string } }) {
+export default function DocumentsPage({ params: _params }: { params: { orgId: string } }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

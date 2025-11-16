@@ -9,7 +9,7 @@ import { FormField, FormLabel, FormControl } from '@/components/ui/form';
 /**
  * Settings page
  */
-export default function SettingsPage({ params }: { params: { orgId: string } }) {
+export default function SettingsPage({ params: _params }: { params: { orgId: string } }) {
   return (
     <div className="space-y-6">
       <div>

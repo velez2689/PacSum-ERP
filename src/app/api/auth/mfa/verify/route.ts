@@ -20,7 +20,7 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
-  return requireAuth(request, async (req: _, user) => {
+  return requireAuth(request, async (req: NextRequest, user) => {
     try {
       // Parse request body
       const body = await req.json();
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       // Get user MFA data
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('mfa_enabled, mfa_secret, email, first_name')
+        .select('mfa_enabled, mfa_secret, mfa_recovery_codes, email, first_name')
         .eq('id', user.id)
         .single();
 
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
 async function auditLog(
   userId: string,
   event: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<void> {
   await supabase.from('audit_logs').insert({
     user_id: userId,

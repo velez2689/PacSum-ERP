@@ -13,7 +13,7 @@ import { MFA_CONFIG } from '@/lib/config/mfa';
  */
 export async function generateMFASecret(
   userEmail: string,
-  userName: string
+  _userName: string
 ): Promise<{
   secret: string;
   qrCodeUrl: string;

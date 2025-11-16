@@ -21,7 +21,6 @@ import { getInitials } from '@/utils/formatting';
  */
 export function Navbar() {
   const { user, logout } = useAuth();
-  const pathname = usePathname();
 
   const handleLogout = async (): Promise<void> => {
     try {

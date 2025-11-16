@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { FHSCard } from './FHSCard';
 import { RecentTransactions } from './RecentTransactions';
-import { TrendingUp, TrendingDown, Users, DollarSign, FileText } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, FileText } from 'lucide-react';
 
 interface OverviewProps {
   orgId: string;

@@ -117,16 +117,6 @@ function getQuickBooksConfig(): QuickBooksConfig {
 }
 
 /**
- * Default rate limits for integrations
- */
-const defaultRateLimits: IntegrationRateLimits = {
-  maxRequestsPerSecond: 10,
-  maxRequestsPerMinute: 100,
-  maxRequestsPerHour: 5000,
-  maxConcurrentRequests: 5,
-};
-
-/**
  * Stripe rate limits
  * See: https://stripe.com/docs/rate-limits
  */

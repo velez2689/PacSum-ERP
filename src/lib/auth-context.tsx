@@ -28,16 +28,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   /**
-   * Initialize auth state from stored session
-   */
-  useEffect(() => {
-    initializeAuth();
-  }, []);
-
-  /**
    * Initialize authentication state
    */
-  const initializeAuth = async (): Promise<void> => {
+  const initializeAuth = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       const storedSession = localStorage.getItem('auth_session');
@@ -61,7 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  /**
+   * Initialize auth state from stored session
+   */
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   /**
    * Clear authentication state
@@ -89,17 +89,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (credentials: LoginCredentials): Promise<void> => {
       try {
+        console.log('AuthContext: Starting login for:', credentials.email);
         setLoading(true);
         setError(null);
 
+        console.log('AuthContext: Making API request to /auth/login');
         const response = await apiClient.post<AuthSession>('/auth/login', credentials);
 
+        console.log('AuthContext: API response:', response.success, response.data);
+
         if (response.success && response.data) {
+          console.log('AuthContext: Login successful, saving session');
           saveSession(response.data);
-          router.push('/dashboard');
+          // Redirect to organization-specific dashboard
+          const orgId = response.data.user.organizationId;
+          console.log('AuthContext: Redirecting to /dashboard/' + orgId);
+          router.push(`/dashboard/${orgId}`);
+          console.log('AuthContext: router.push called');
+        } else {
+          throw new Error('Login failed: Invalid response');
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to login';
+        console.error('AuthContext: Login error:', errorMessage, err);
         setError(errorMessage);
         throw new Error(errorMessage);
       } finally {

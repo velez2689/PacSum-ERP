@@ -10,8 +10,6 @@ import {
   ValidationError,
   RateLimitExceededError,
   isOperationalError,
-  getSafeErrorMessage,
-  getErrorStatusCode,
 } from './auth-errors';
 import { formatZodErrors } from '@/lib/auth/validators';
 
@@ -21,7 +19,7 @@ export interface ErrorResponse {
     message: string;
     code: string;
     statusCode: number;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
     timestamp: string;
     requestId?: string;
   };
@@ -30,7 +28,7 @@ export interface ErrorResponse {
 /**
  * Log error to monitoring service
  */
-function logError(error: Error, context?: Record<string, any>): void {
+function logError(error: Error, context?: Record<string, unknown>): void {
   // In production, send to error monitoring service (e.g., Sentry, LogRocket)
   if (process.env.NODE_ENV === 'production') {
     // TODO: Integrate with error monitoring service
@@ -115,7 +113,7 @@ function handleGenericError(error: Error): ErrorResponse {
  */
 export function handleError(
   error: unknown,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): NextResponse<ErrorResponse> {
   // Handle Zod validation errors
   if (error instanceof ZodError) {
@@ -154,9 +152,9 @@ export function handleError(
  * Async error wrapper for route handlers
  */
 export function asyncHandler(
-  handler: (req: Request, context?: any) => Promise<NextResponse>
+  handler: (req: Request, context?: unknown) => Promise<NextResponse>
 ) {
-  return async (req: Request, context?: any): Promise<NextResponse> => {
+  return async (req: Request, context?: unknown): Promise<NextResponse> => {
     try {
       return await handler(req, context);
     } catch (error) {
@@ -196,7 +194,7 @@ export function createErrorResponse(
   message: string,
   code: string,
   statusCode: number,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): ErrorResponse {
   return {
     success: false,

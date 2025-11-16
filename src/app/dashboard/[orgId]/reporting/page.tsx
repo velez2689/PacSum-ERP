@@ -28,7 +28,7 @@ interface ClientMetrics {
  * Displays financial reports, analytics, and insights
  */
 export default function ReportingPage({
-  _params,
+  params: _params,
 }: {
   params: { orgId: string };
 }) {
@@ -59,7 +59,6 @@ export default function ReportingPage({
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       // In production, this would generate and download a PDF/CSV
-      console.log(`Exporting report for period: ${dateRange}`);
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +69,6 @@ export default function ReportingPage({
       setIsLoading(true);
       // Simulate API call to refresh data
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Report data refreshed');
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +111,7 @@ export default function ReportingPage({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-4">
             <div className="flex-1">
               <label className="text-sm font-medium">Date Range</label>
-              <Select value={dateRange} onChange={(e) => setDateRange(e.target.value as any)} className="mt-1">
+              <Select value={dateRange} onChange={(e) => setDateRange(e.target.value as 'month' | 'quarter' | 'year')} className="mt-1">
                 <option value="month">This Month</option>
                 <option value="quarter">This Quarter</option>
                 <option value="year">This Year</option>

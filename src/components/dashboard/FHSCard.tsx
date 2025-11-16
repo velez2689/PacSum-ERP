@@ -11,7 +11,7 @@ interface FHSCardProps {
 /**
  * Financial Health Score card component
  */
-export function FHSCard({ orgId, score = 72 }: FHSCardProps) {
+export function FHSCard({ orgId: _orgId, score = 72 }: FHSCardProps) {
   const getScoreColor = (score: number): string => {
     if (score >= 80) return 'text-green-500';
     if (score >= 60) return 'text-yellow-500';

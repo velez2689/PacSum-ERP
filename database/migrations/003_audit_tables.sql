@@ -20,7 +20,8 @@ CREATE TABLE audit_logs (
     -- What action was performed
     action TEXT NOT NULL CHECK (action IN (
         'INSERT', 'UPDATE', 'DELETE', 'SELECT',
-        'LOGIN', 'LOGOUT', 'LOGIN_FAILED',
+        'LOGIN', 'LOGOUT', 'LOGIN_FAILED', 'MFA_FAILED', 'MFA_VERIFIED', 'MFA_ENABLED',
+        'SIGNUP', 'EMAIL_VERIFIED', 'PASSWORD_RESET_REQUESTED', 'PASSWORD_RESET_COMPLETED', 'TOKEN_REFRESHED',
         'PERMISSION_DENIED', 'EXPORT', 'IMPORT'
     )),
     -- What resource was affected
@@ -138,12 +139,25 @@ BEGIN
         v_user_id := NULL;
     END;
 
-    -- Get organization ID from the record
-    IF TG_OP = 'DELETE' THEN
-        v_organization_id := OLD.organization_id;
-    ELSE
-        v_organization_id := NEW.organization_id;
-    END IF;
+    -- Get organization ID from the record (if it has the organization_id field)
+    BEGIN
+        IF TG_OP = 'DELETE' THEN
+            v_organization_id := OLD.organization_id;
+        ELSE
+            v_organization_id := NEW.organization_id;
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        -- For tables without organization_id, try to get it from id if it's the organizations table
+        IF TG_TABLE_NAME = 'organizations' THEN
+            IF TG_OP = 'DELETE' THEN
+                v_organization_id := OLD.id;
+            ELSE
+                v_organization_id := NEW.id;
+            END IF;
+        ELSE
+            v_organization_id := NULL;
+        END IF;
+    END;
 
     -- Convert row to JSONB
     IF TG_OP = 'INSERT' THEN

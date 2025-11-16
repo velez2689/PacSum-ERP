@@ -28,12 +28,18 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData): Promise<void> => {
     try {
+      console.log('LoginForm: Submitting login with email:', data.email);
+      console.log('LoginForm: Password field value:', data.password);
       setIsLoading(true);
       setError(null);
+      console.log('LoginForm: Calling login function...');
       await login(data);
+      console.log('LoginForm: Login successful, redirect should happen');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to login');
-    } finally {
+      const message = err instanceof Error ? err.message : 'Failed to login';
+      console.error('LoginForm: Login error:', message);
+      console.error('LoginForm: Full error:', err);
+      setError(message);
       setIsLoading(false);
     }
   };

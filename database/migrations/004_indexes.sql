@@ -45,7 +45,7 @@ CREATE INDEX idx_users_last_login ON users(last_login_at DESC)
 
 -- Security: find locked accounts
 CREATE INDEX idx_users_locked ON users(locked_until)
-    WHERE locked_until IS NOT NULL AND locked_until > NOW();
+    WHERE locked_until IS NOT NULL;
 
 -- Password reset tokens
 CREATE INDEX idx_users_reset_token ON users(reset_token)
@@ -182,8 +182,7 @@ CREATE INDEX idx_invoices_status ON invoices(organization_id, status)
 -- Overdue invoices (critical business query)
 CREATE INDEX idx_invoices_overdue ON invoices(organization_id, due_date)
     WHERE deleted_at IS NULL
-    AND status NOT IN ('paid', 'void', 'cancelled')
-    AND due_date < CURRENT_DATE;
+    AND status NOT IN ('paid', 'void', 'cancelled');
 
 -- Payment tracking
 CREATE INDEX idx_invoices_paid ON invoices(paid_at DESC)
@@ -373,8 +372,7 @@ CREATE INDEX idx_collections_overdue ON invoices(
     due_date,
     amount_due
 ) WHERE deleted_at IS NULL
-  AND status NOT IN ('paid', 'void', 'cancelled')
-  AND due_date < CURRENT_DATE;
+  AND status NOT IN ('paid', 'void', 'cancelled');
 
 COMMENT ON INDEX idx_dashboard_recent_activity IS 'Dashboard: show recent client transactions';
 COMMENT ON INDEX idx_reporting_revenue IS 'Financial reporting: revenue by category';

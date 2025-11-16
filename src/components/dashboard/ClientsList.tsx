@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Table,
@@ -32,11 +32,7 @@ export function ClientsList({ orgId, limit }: ClientsListProps) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    fetchClients();
-  }, [orgId]);
-
-  const fetchClients = async (): Promise<void> => {
+  const fetchClients = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       const response = await apiClient.get<Client[]>(`/organizations/${orgId}/clients`, {
@@ -48,7 +44,11 @@ export function ClientsList({ orgId, limit }: ClientsListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orgId, limit]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   const filteredClients = clients.filter((client) =>
     client.name.toLowerCase().includes(search.toLowerCase())

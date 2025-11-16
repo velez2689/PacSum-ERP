@@ -88,7 +88,7 @@ describe('Password Utilities', () => {
     });
 
     it('should reject passwords that are too short', () => {
-      const result = validatePasswordStrength('Pass123!');
+      const result = validatePasswordStrength('Pass12!');
       expect(result.valid).toBe(false);
       expect(result.errors.some(e => e.includes('at least'))).toBe(true);
     });

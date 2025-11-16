@@ -24,9 +24,12 @@ const PUBLIC_ROUTES = [
 
 // Routes that require authentication
 const PROTECTED_ROUTES = [
-  '/dashboard',
+  '/dashboard', // This will match /dashboard and /dashboard/* via startsWith in isProtectedRoute
   '/api/auth/me',
   '/api/auth/mfa',
+  '/api/clients',
+  '/api/transactions',
+  '/api/invoices',
 ];
 
 // API routes that should be excluded from middleware
@@ -116,33 +119,29 @@ export async function middleware(request: NextRequest) {
   // Get authentication status
   const authStatus = await getAuthStatus(request);
 
-  // Redirect authenticated users away from auth pages
-  if (authStatus.authenticated && pathname.startsWith('/auth/')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // Redirect authenticated users away from auth pages (except during the actual login submission)
+  // The auth context will handle the redirect after successful login
+  if (authStatus.authenticated && pathname === '/auth/login') {
+    // Get the redirect URL from query params, or default to root
+    const redirectUrl = request.nextUrl.searchParams.get('redirect') || '/';
+    return NextResponse.redirect(new URL(redirectUrl, request.url));
   }
 
-  // Protect routes that require authentication
-  if (isProtectedRoute(pathname) && !authStatus.authenticated) {
-    // For API routes, return 401
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            message: 'Authentication required',
-            code: 'UNAUTHORIZED',
-            statusCode: 401,
-            timestamp: new Date().toISOString(),
-          },
+  // Protect API routes that require authentication
+  // Note: Page routes are protected at the component level using the auth context
+  if (isProtectedRoute(pathname) && pathname.startsWith('/api/') && !authStatus.authenticated) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          message: 'Authentication required',
+          code: 'UNAUTHORIZED',
+          statusCode: 401,
+          timestamp: new Date().toISOString(),
         },
-        { status: 401 }
-      );
-    }
-
-    // For pages, redirect to login
-    const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+      },
+      { status: 401 }
+    );
   }
 
   // Continue with request

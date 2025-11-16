@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 async function auditLog(
   userId: string,
   event: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<void> {
   await supabase.from('audit_logs').insert({
     user_id: userId,

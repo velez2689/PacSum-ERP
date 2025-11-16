@@ -10,6 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { Client } = require('pg');
 
 // ANSI color codes
 const colors = {
@@ -67,7 +68,7 @@ function getDatabaseUrl() {
 }
 
 // Run a SQL file
-function runSqlFile(filePath, databaseUrl) {
+async function runSqlFile(filePath, databaseUrl) {
   const fileName = path.basename(filePath);
 
   try {
@@ -82,10 +83,16 @@ function runSqlFile(filePath, databaseUrl) {
       execSync(command, { stdio: 'inherit' });
     } catch (psqlError) {
       // If psql is not available, try using node-postgres
-      logWarning('psql not found, trying alternative method...');
+      logWarning('psql not found, using Node.js database client...');
 
-      // This would require pg module, but we'll just error out for now
-      throw new Error('psql is required to run migrations. Please install PostgreSQL client tools.');
+      const client = new Client({ connectionString: databaseUrl });
+      await client.connect();
+
+      try {
+        await client.query(sql);
+      } finally {
+        await client.end();
+      }
     }
 
     logSuccess(`${fileName} completed`);
@@ -126,7 +133,7 @@ async function runMigrations() {
       continue;
     }
 
-    const success = runSqlFile(filePath, databaseUrl);
+    const success = await runSqlFile(filePath, databaseUrl);
 
     if (success) {
       successCount++;
@@ -177,7 +184,7 @@ async function runSeed() {
   logWarning('Only run this in DEVELOPMENT environments.');
   console.log('');
 
-  const success = runSqlFile(seedFile, databaseUrl);
+  const success = await runSqlFile(seedFile, databaseUrl);
 
   if (success) {
     console.log('');
@@ -211,7 +218,7 @@ async function runRollback() {
     process.exit(1);
   }
 
-  const success = runSqlFile(rollbackFile, databaseUrl);
+  const success = await runSqlFile(rollbackFile, databaseUrl);
 
   if (success) {
     console.log('');
@@ -228,18 +235,19 @@ async function runRollback() {
 // CLI interface
 const command = process.argv[2];
 
-switch (command) {
-  case 'migrate':
-  case 'up':
-    runMigrations();
-    break;
-  case 'seed':
-    runSeed();
-    break;
-  case 'rollback':
-  case 'down':
-    runRollback();
-    break;
+(async () => {
+  switch (command) {
+    case 'migrate':
+    case 'up':
+      await runMigrations();
+      break;
+    case 'seed':
+      await runSeed();
+      break;
+    case 'rollback':
+    case 'down':
+      await runRollback();
+      break;
   default:
     logHeader('PACSUM ERP - Database Tools');
     console.log('Usage:');
@@ -252,4 +260,8 @@ switch (command) {
     console.log('  npm run db:seed');
     console.log('  npm run db:rollback');
     console.log('');
-}
+  }
+})().catch(error => {
+  logError(error.message);
+  process.exit(1);
+});

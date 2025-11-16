@@ -65,7 +65,7 @@ export function validatePasswordStrength(password: string): {
 
   // Check for common weak passwords
   const commonPasswords = [
-    'password', 'password123', '12345678', 'qwerty', 'abc123',
+    'password', 'password123', 'password123!', '12345678', 'qwerty', 'abc123',
     'password1', '123456789', 'welcome', 'admin', 'letmein'
   ];
 
@@ -114,7 +114,14 @@ export function generateSecurePassword(length: number = 16): string {
  */
 export async function needsRehash(hash: string, rounds: number = 12): Promise<boolean> {
   try {
-    const hashRounds = parseInt(hash.split('$')[2], 10);
+    const parts = hash.split('$');
+    if (parts.length < 3) {
+      return true; // Invalid bcrypt hash format
+    }
+    const hashRounds = parseInt(parts[2], 10);
+    if (isNaN(hashRounds)) {
+      return true; // Invalid rounds number
+    }
     return hashRounds < rounds;
   } catch {
     return true;
@@ -124,6 +131,6 @@ export async function needsRehash(hash: string, rounds: number = 12): Promise<bo
 /**
  * Sanitize password for logging (never log actual passwords!)
  */
-export function sanitizePasswordForLog(password: string): string {
+export function sanitizePasswordForLog(_password: string): string {
   return '********';
 }

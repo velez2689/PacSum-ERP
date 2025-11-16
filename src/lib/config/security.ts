@@ -116,43 +116,33 @@ export const SESSION_CONFIG = {
   REMEMBER_ME_DURATION: 30 * 24 * 60 * 60 * 1000, // 30 days
 } as const;
 
-// Audit log events
+// Audit log events (must match audit_logs table constraint)
 export const AUDIT_EVENTS = {
   // Authentication events
-  LOGIN_SUCCESS: 'auth.login.success',
-  LOGIN_FAILED: 'auth.login.failed',
-  LOGOUT: 'auth.logout',
+  LOGIN_SUCCESS: 'LOGIN',
+  LOGIN_FAILED: 'LOGIN_FAILED',
+  MFA_FAILED: 'MFA_FAILED',
+  MFA_VERIFIED: 'MFA_VERIFIED',
+  MFA_ENABLED: 'MFA_ENABLED',
+  LOGOUT: 'LOGOUT',
 
-  // Registration events
-  SIGNUP_SUCCESS: 'auth.signup.success',
-  SIGNUP_FAILED: 'auth.signup.failed',
+  // User account events
+  SIGNUP_SUCCESS: 'SIGNUP',
+  EMAIL_VERIFIED: 'EMAIL_VERIFIED',
+  PASSWORD_RESET_REQUESTED: 'PASSWORD_RESET_REQUESTED',
+  PASSWORD_RESET_COMPLETED: 'PASSWORD_RESET_COMPLETED',
+  TOKEN_REFRESHED: 'TOKEN_REFRESHED',
 
-  // Email verification
-  EMAIL_VERIFICATION_SENT: 'auth.email.verification.sent',
-  EMAIL_VERIFIED: 'auth.email.verified',
+  // Data operations
+  INSERT: 'INSERT',
+  UPDATE: 'UPDATE',
+  DELETE: 'DELETE',
+  SELECT: 'SELECT',
 
-  // Password events
-  PASSWORD_RESET_REQUESTED: 'auth.password.reset.requested',
-  PASSWORD_RESET_COMPLETED: 'auth.password.reset.completed',
-  PASSWORD_CHANGED: 'auth.password.changed',
-
-  // MFA events
-  MFA_ENABLED: 'auth.mfa.enabled',
-  MFA_DISABLED: 'auth.mfa.disabled',
-  MFA_VERIFIED: 'auth.mfa.verified',
-  MFA_FAILED: 'auth.mfa.failed',
-
-  // Token events
-  TOKEN_REFRESHED: 'auth.token.refreshed',
-  TOKEN_REVOKED: 'auth.token.revoked',
-
-  // Session events
-  SESSION_CREATED: 'auth.session.created',
-  SESSION_TERMINATED: 'auth.session.terminated',
-
-  // Account events
-  ACCOUNT_LOCKED: 'auth.account.locked',
-  ACCOUNT_UNLOCKED: 'auth.account.unlocked',
+  // Security events
+  PERMISSION_DENIED: 'PERMISSION_DENIED',
+  EXPORT: 'EXPORT',
+  IMPORT: 'IMPORT',
 } as const;
 
 // Encryption settings

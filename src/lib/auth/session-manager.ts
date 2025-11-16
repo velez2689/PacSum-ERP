@@ -5,12 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { SESSION_CONFIG } from '@/lib/config/security';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { queryDb, queryDbSingle, executeDb } from '@/lib/db/postgres';
 
 export interface Session {
   id: string;
@@ -44,37 +39,37 @@ export async function createSession(data: SessionCreateData): Promise<Session> {
 
   const expiresAt = new Date(now.getTime() + expirationMs);
 
-  const { data: session, error } = await supabase
-    .from('sessions')
-    .insert({
-      id: sessionId,
-      user_id: data.userId,
-      token_version: 1,
-      ip_address: data.ipAddress,
-      user_agent: data.userAgent,
-      last_activity: now.toISOString(),
-      expires_at: expiresAt.toISOString(),
-      created_at: now.toISOString(),
-    })
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`Failed to create session: ${error.message}`);
+  try {
+    await executeDb(
+      `INSERT INTO sessions (id, user_id, token_version, ip_address, user_agent, last_activity, expires_at, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        sessionId,
+        data.userId,
+        1,
+        data.ipAddress || null,
+        data.userAgent || null,
+        now.toISOString(),
+        expiresAt.toISOString(),
+        now.toISOString(),
+      ]
+    );
+  } catch (error) {
+    throw new Error(`Failed to create session: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   // Clean up old sessions if user has too many
   await cleanupOldSessions(data.userId);
 
   return {
-    id: session.id,
-    userId: session.user_id,
-    tokenVersion: session.token_version,
-    ipAddress: session.ip_address,
-    userAgent: session.user_agent,
-    lastActivity: new Date(session.last_activity),
-    expiresAt: new Date(session.expires_at),
-    createdAt: new Date(session.created_at),
+    id: sessionId,
+    userId: data.userId,
+    tokenVersion: 1,
+    ipAddress: data.ipAddress,
+    userAgent: data.userAgent,
+    lastActivity: now,
+    expiresAt,
+    createdAt: now,
   };
 }
 
@@ -82,26 +77,29 @@ export async function createSession(data: SessionCreateData): Promise<Session> {
  * Get session by ID
  */
 export async function getSession(sessionId: string): Promise<Session | null> {
-  const { data, error } = await supabase
-    .from('sessions')
-    .select('*')
-    .eq('id', sessionId)
-    .single();
+  try {
+    const data = await queryDbSingle<any>(
+      'SELECT * FROM sessions WHERE id = $1',
+      [sessionId]
+    );
 
-  if (error || !data) {
+    if (!data) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      userId: data.user_id,
+      tokenVersion: data.token_version,
+      ipAddress: data.ip_address,
+      userAgent: data.user_agent,
+      lastActivity: new Date(data.last_activity),
+      expiresAt: new Date(data.expires_at),
+      createdAt: new Date(data.created_at),
+    };
+  } catch {
     return null;
   }
-
-  return {
-    id: data.id,
-    userId: data.user_id,
-    tokenVersion: data.token_version,
-    ipAddress: data.ip_address,
-    userAgent: data.user_agent,
-    lastActivity: new Date(data.last_activity),
-    expiresAt: new Date(data.expires_at),
-    createdAt: new Date(data.created_at),
-  };
 }
 
 /**
@@ -110,26 +108,24 @@ export async function getSession(sessionId: string): Promise<Session | null> {
 export async function updateSessionActivity(sessionId: string): Promise<void> {
   const now = new Date();
 
-  await supabase
-    .from('sessions')
-    .update({
-      last_activity: now.toISOString(),
-    })
-    .eq('id', sessionId);
+  await executeDb(
+    'UPDATE sessions SET last_activity = $1 WHERE id = $2',
+    [now.toISOString(), sessionId]
+  );
 }
 
 /**
  * Invalidate a specific session
  */
 export async function invalidateSession(sessionId: string): Promise<void> {
-  await supabase.from('sessions').delete().eq('id', sessionId);
+  await executeDb('DELETE FROM sessions WHERE id = $1', [sessionId]);
 }
 
 /**
  * Invalidate all sessions for a user
  */
 export async function invalidateAllUserSessions(userId: string): Promise<void> {
-  await supabase.from('sessions').delete().eq('user_id', userId);
+  await executeDb('DELETE FROM sessions WHERE user_id = $1', [userId]);
 }
 
 /**
@@ -139,33 +135,31 @@ export async function invalidateOtherSessions(
   userId: string,
   currentSessionId: string
 ): Promise<void> {
-  await supabase
-    .from('sessions')
-    .delete()
-    .eq('user_id', userId)
-    .neq('id', currentSessionId);
+  await executeDb(
+    'DELETE FROM sessions WHERE user_id = $1 AND id != $2',
+    [userId, currentSessionId]
+  );
 }
 
 /**
  * Increment token version (invalidates all tokens for this session)
  */
 export async function incrementTokenVersion(sessionId: string): Promise<number> {
-  const { data, error } = await supabase
-    .from('sessions')
-    .select('token_version')
-    .eq('id', sessionId)
-    .single();
+  const data = await queryDbSingle<any>(
+    'SELECT token_version FROM sessions WHERE id = $1',
+    [sessionId]
+  );
 
-  if (error || !data) {
+  if (!data) {
     throw new Error('Session not found');
   }
 
   const newVersion = data.token_version + 1;
 
-  await supabase
-    .from('sessions')
-    .update({ token_version: newVersion })
-    .eq('id', sessionId);
+  await executeDb(
+    'UPDATE sessions SET token_version = $1 WHERE id = $2',
+    [newVersion, sessionId]
+  );
 
   return newVersion;
 }
@@ -209,26 +203,25 @@ export async function validateSession(sessionId: string): Promise<{
  * Get all active sessions for a user
  */
 export async function getUserSessions(userId: string): Promise<Session[]> {
-  const { data, error } = await supabase
-    .from('sessions')
-    .select('*')
-    .eq('user_id', userId)
-    .order('last_activity', { ascending: false });
+  try {
+    const data = await queryDb<any>(
+      'SELECT * FROM sessions WHERE user_id = $1 ORDER BY last_activity DESC',
+      [userId]
+    );
 
-  if (error || !data) {
+    return data.map((s) => ({
+      id: s.id,
+      userId: s.user_id,
+      tokenVersion: s.token_version,
+      ipAddress: s.ip_address,
+      userAgent: s.user_agent,
+      lastActivity: new Date(s.last_activity),
+      expiresAt: new Date(s.expires_at),
+      createdAt: new Date(s.created_at),
+    }));
+  } catch {
     return [];
   }
-
-  return data.map((s) => ({
-    id: s.id,
-    userId: s.user_id,
-    tokenVersion: s.token_version,
-    ipAddress: s.ip_address,
-    userAgent: s.user_agent,
-    lastActivity: new Date(s.last_activity),
-    expiresAt: new Date(s.expires_at),
-    createdAt: new Date(s.created_at),
-  }));
 }
 
 /**
@@ -265,15 +258,14 @@ export async function cleanupOldSessions(userId: string): Promise<void> {
 export async function cleanupExpiredSessions(): Promise<number> {
   const now = new Date();
 
-  const { data, error } = await supabase
-    .from('sessions')
-    .delete()
-    .lt('expires_at', now.toISOString())
-    .select();
+  try {
+    const data = await queryDb<any>(
+      'DELETE FROM sessions WHERE expires_at < $1 RETURNING id',
+      [now.toISOString()]
+    );
 
-  if (error) {
-    throw new Error(`Failed to cleanup sessions: ${error.message}`);
+    return data?.length || 0;
+  } catch (error) {
+    throw new Error(`Failed to cleanup sessions: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
-
-  return data?.length || 0;
 }

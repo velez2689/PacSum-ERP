@@ -4,7 +4,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { queryDbSingle, executeDb } from '@/lib/db/postgres';
 import { comparePassword } from '@/lib/auth/password-utils';
 import { generateAccessToken, generateRefreshToken } from '@/lib/auth/token-manager';
 import { createSession } from '@/lib/auth/session-manager';
@@ -22,11 +22,6 @@ import { AUDIT_EVENTS } from '@/lib/config/security';
 import { verifyTOTP } from '@/lib/auth/mfa-utils';
 import { generateMFASessionToken } from '@/lib/auth/mfa-utils';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(request: NextRequest) {
   try {
     // Parse request body
@@ -38,22 +33,21 @@ export async function POST(request: NextRequest) {
       return handleError(validation.error);
     }
 
-2    const { email, password, mfaCode, rememberMe } = validation.data;
+    const { email, password, mfaCode, rememberMe } = validation.data;
 
     // Get user from database
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email.toLowerCase())
-      .single();
+    const user = await queryDbSingle<any>(
+      'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
+      [email]
+    );
 
-    if (userError || !user) {
+    if (!user) {
       // Don't reveal whether user exists
       throw new InvalidCredentialsError();
     }
 
     // Check if account is active
-    if (!user.is_active) {
+    if (user.status !== 'active') {
       throw new AccountLockedError('Your account has been deactivated');
     }
 
@@ -81,11 +75,15 @@ export async function POST(request: NextRequest) {
         const mfaToken = generateMFASessionToken();
 
         // Store MFA session temporarily (5 minutes)
-        await supabase.from('mfa_sessions').insert({
-          token: mfaToken,
-          user_id: user.id,
-          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-        });
+        try {
+          await executeDb(
+            `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, status, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [user.id, 'MFA_REQUIRED', 'auth_mfa', user.id, 'pending', new Date().toISOString()]
+          );
+        } catch (error) {
+          console.error('Failed to log MFA session:', error);
+        }
 
         throw new MFARequiredError(mfaToken);
       }
@@ -148,7 +146,9 @@ export async function POST(request: NextRequest) {
           role: user.role,
           organizationId: user.organization_id,
           emailVerified: user.email_verified,
-          avatar: user.avatar,
+          avatar: user.avatar_url,
+          createdAt: user.created_at,
+          updatedAt: user.updated_at,
         },
         accessToken,
         refreshToken,
@@ -189,12 +189,16 @@ export async function POST(request: NextRequest) {
 async function auditLog(
   userId: string,
   event: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<void> {
-  await supabase.from('audit_logs').insert({
-    user_id: userId,
-    event,
-    metadata,
-    created_at: new Date().toISOString(),
-  });
+  try {
+    await executeDb(
+      `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, new_values, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [userId, event, 'auth', userId, JSON.stringify(metadata || {}), 'success', new Date().toISOString()]
+    );
+  } catch (error) {
+    // Log audit errors but don't fail the login
+    console.error('Failed to log audit:', error);
+  }
 }

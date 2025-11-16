@@ -8,12 +8,7 @@ import { verifyAccessToken } from '@/lib/auth/token-manager';
 import { validateSession } from '@/lib/auth/session-manager';
 import { UnauthorizedError, SessionExpiredError, InvalidTokenError } from '@/lib/errors/auth-errors';
 import { COOKIE_CONFIG } from '@/lib/config/jwt';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { queryDbSingle } from '@/lib/db/postgres';
 
 export interface AuthenticatedRequest extends NextRequest {
   user?: {
@@ -90,30 +85,22 @@ export async function authenticateRequest(
       };
     }
 
-    // Check if session token version matches
-    if (sessionValidation.session?.tokenVersion !== payload.userId) {
-      // Token version mismatch - tokens have been revoked
-      return {
-        authenticated: false,
-        error: new InvalidTokenError('Token has been revoked'),
-      };
-    }
-
     // Get user from database to ensure they still exist and are active
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id, email, role, organization_id, email_verified, is_active')
-      .eq('id', payload.userId)
-      .single();
+    const user = await queryDbSingle<any>(
+      `SELECT id, email, role, organization_id, email_verified, status
+       FROM users
+       WHERE id = $1`,
+      [payload.userId]
+    );
 
-    if (userError || !user) {
+    if (!user) {
       return {
         authenticated: false,
         error: new UnauthorizedError('User not found'),
       };
     }
 
-    if (!user.is_active) {
+    if (user.status !== 'active') {
       return {
         authenticated: false,
         error: new UnauthorizedError('Account is deactivated'),
@@ -186,11 +173,10 @@ export async function requireEmailVerification(
   handler: (request: NextRequest, user: NonNullable<AuthenticatedRequest['user']>) => Promise<NextResponse>
 ): Promise<NextResponse> {
   // Get user email verification status
-  const { data: userData } = await supabase
-    .from('users')
-    .select('email_verified')
-    .eq('id', user.id)
-    .single();
+  const userData = await queryDbSingle<any>(
+    `SELECT email_verified FROM users WHERE id = $1`,
+    [user.id]
+  );
 
   if (!userData?.email_verified) {
     return NextResponse.json(

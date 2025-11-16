@@ -29,15 +29,8 @@ export interface EmailOptions {
  */
 export async function sendEmail(options: EmailOptions): Promise<void> {
   if (!SENDGRID_API_KEY) {
-    console.warn('SendGrid API key not configured. Email not sent:', options.subject);
-
     // In development, log email instead of sending
     if (process.env.NODE_ENV === 'development') {
-      console.log('📧 Email (DEV MODE):', {
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-      });
       return;
     }
 
@@ -58,10 +51,7 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
     };
 
     await sgMail.send(msg);
-
-    console.log(`Email sent successfully to ${options.to}: ${options.subject}`);
   } catch (error) {
-    console.error('Failed to send email:', error);
     throw new EmailDeliveryError(
       error instanceof Error ? error.message : 'Failed to send email'
     );
@@ -357,17 +347,3 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-/**
- * Audit email send
- */
-async function auditEmailSend(to: string, subject: string, success: boolean): Promise<void> {
-  // Log to audit trail
-  console.log('Email audit:', {
-    to,
-    subject,
-    success,
-    timestamp: new Date().toISOString(),
-  });
-
-  // In production, you might want to store this in the database
-}

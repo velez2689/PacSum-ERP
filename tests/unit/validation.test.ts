@@ -21,6 +21,7 @@ describe('Auth Validation Schemas', () => {
         firstName: 'John',
         lastName: 'Doe',
         organizationName: 'Test Company',
+        acceptTerms: true,
       };
 
       const result = signupSchema.safeParse(data);
@@ -67,6 +68,7 @@ describe('Auth Validation Schemas', () => {
         password: 'SecurePassword123!',
         firstName: 'John',
         lastName: 'Doe',
+        acceptTerms: true,
       };
 
       const result = signupSchema.safeParse(data);
@@ -199,6 +201,7 @@ describe('Auth Validation Schemas', () => {
       const data = {
         token: 'valid.jwt.token',
         password: 'NewSecurePassword123!',
+        confirmPassword: 'NewSecurePassword123!',
       };
 
       const result = passwordResetSchema.safeParse(data);
@@ -246,7 +249,8 @@ describe('Auth Validation Schemas', () => {
 
     it('should accept recovery code', () => {
       const data = {
-        recoveryCode: 'ABCD-EFGH',
+        code: 'ABCD-EFGH',
+        recoveryCode: true,
       };
 
       const result = mfaVerificationSchema.safeParse(data);

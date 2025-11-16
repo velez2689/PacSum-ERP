@@ -5,7 +5,6 @@ import { TransactionType, TransactionCategory, PaymentMethod, type CreateTransac
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Form, FormField, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 
 interface TransactionFormProps {

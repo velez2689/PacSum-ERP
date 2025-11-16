@@ -40,16 +40,16 @@ describe('Currency Formatting', () => {
 
 describe('Date Formatting', () => {
   const formatDate = (date: Date, format: string = 'MM/DD/YYYY'): string => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
 
     if (format === 'MM/DD/YYYY') return `${month}/${day}/${year}`;
     if (format === 'YYYY-MM-DD') return `${year}-${month}-${day}`;
     if (format === 'DD-MMM-YYYY') {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
         'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${day}-${months[date.getMonth()]}-${year}`;
+      return `${day}-${months[date.getUTCMonth()]}-${year}`;
     }
 
     return date.toString();
@@ -119,7 +119,7 @@ describe('Time Formatting', () => {
 
 describe('Number Formatting', () => {
   const formatNumber = (num: number, decimals: number = 2): string => {
-    return num.toFixed(decimals).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');
+    return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
   it('should format number with thousands separator', () => {
@@ -208,13 +208,13 @@ describe('Percentage Formatting', () => {
 
 describe('Data Formatting', () => {
   const formatPhone = (phone: string): string => {
-    const cleaned = phone.replace(/\\D/g, '');
+    const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length !== 10) return phone;
     return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
   };
 
   const formatZipCode = (zip: string): string => {
-    const cleaned = zip.replace(/\\D/g, '');
+    const cleaned = zip.replace(/\D/g, '');
     if (cleaned.length === 5) return cleaned;
     if (cleaned.length === 9) {
       return `${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
