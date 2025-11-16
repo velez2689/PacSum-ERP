@@ -3,11 +3,17 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
+# Configure npm with extended timeout
+RUN npm config set fetch-timeout 120000 && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
 # Copy package files
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -20,9 +26,15 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Configure npm with extended timeout
+RUN npm config set fetch-timeout 120000 && \
+    npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
+
 # Install only production dependencies
 COPY package.json package-lock.json ./
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
 
 # Copy built application from builder
 COPY --from=builder /app/.next ./.next

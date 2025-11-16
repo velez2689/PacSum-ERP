@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/middleware/auth';
-import { successResponse } from '@/utils/error-responses';
+import { successResponse, ErrorResponses } from '@/utils/error-responses';
 import { queryDb } from '@/lib/db/postgres';
 
 interface Transaction {

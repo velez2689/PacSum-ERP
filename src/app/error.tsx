@@ -57,7 +57,7 @@ export default function ErrorPage({ error, reset }: ErrorProps) {
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
           <Button
             onClick={reset}
-            variant="default"
+            variant="primary"
             className="flex-1"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
