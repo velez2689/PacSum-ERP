@@ -27,7 +27,7 @@ export function RecentTransactions({ orgId, limit = 5 }: RecentTransactionsProps
         `/organizations/${orgId}/transactions`,
         { params: { limit } }
       );
-      setTransactions(response.data);
+      setTransactions(response.data || []);
     } catch (error) {
       console.error('Failed to fetch transactions:', error);
     } finally {

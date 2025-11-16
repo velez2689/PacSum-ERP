@@ -38,7 +38,7 @@ export function ClientsList({ orgId, limit }: ClientsListProps) {
       const response = await apiClient.get<Client[]>(`/organizations/${orgId}/clients`, {
         params: { limit },
       });
-      setClients(response.data);
+      setClients(response.data || []);
     } catch (error) {
       console.error('Failed to fetch clients:', error);
     } finally {

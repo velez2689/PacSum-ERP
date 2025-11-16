@@ -1,3 +1,23 @@
+/**
+ * API Response wrapper for all API endpoints
+ */
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: ApiError;
+}
+
+/**
+ * API Error format
+ */
+export interface ApiError {
+  message: string;
+  code: string;
+  details?: unknown;
+  statusCode?: number;
+}
+
 export interface User {
   id: string;
   email: string;
