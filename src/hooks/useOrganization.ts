@@ -59,11 +59,14 @@ export function useOrganization(orgId?: string) {
   const createOrganization = useMutation({
     mutationFn: async (data: CreateOrganizationData) => {
       const response = await apiClient.post<Organization>('/organizations', data);
+      if (!response.data) throw new Error('No organization data received');
       return response.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
-      setCurrentOrgId(data.id);
+      if (data?.id) {
+        setCurrentOrgId(data.id);
+      }
     },
   });
 
