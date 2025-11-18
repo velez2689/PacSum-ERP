@@ -27,11 +27,12 @@ export function useOrganization(orgId?: string) {
     data: organization,
     isLoading,
     error,
-  } = useQuery<Organization>({
+  } = useQuery({
     queryKey: ['organization', currentOrgId],
-    queryFn: async () => {
+    queryFn: async (): Promise<Organization> => {
       if (!currentOrgId) throw new Error('No organization ID');
       const response = await apiClient.get<Organization>(`/organizations/${currentOrgId}`);
+      if (!response.data) throw new Error('No organization data received');
       return response.data;
     },
     enabled: !!currentOrgId,
@@ -43,10 +44,11 @@ export function useOrganization(orgId?: string) {
   const {
     data: organizations,
     isLoading: isLoadingOrganizations,
-  } = useQuery<Organization[]>({
+  } = useQuery({
     queryKey: ['organizations'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Organization[]> => {
       const response = await apiClient.get<Organization[]>('/organizations');
+      if (!response.data) throw new Error('No organizations data received');
       return response.data;
     },
   });
@@ -57,11 +59,14 @@ export function useOrganization(orgId?: string) {
   const createOrganization = useMutation({
     mutationFn: async (data: CreateOrganizationData) => {
       const response = await apiClient.post<Organization>('/organizations', data);
+      if (!response.data) throw new Error('No organization data received');
       return response.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
-      setCurrentOrgId(data.id);
+      if (data?.id) {
+        setCurrentOrgId(data.id);
+      }
     },
   });
 
