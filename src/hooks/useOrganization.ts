@@ -32,6 +32,7 @@ export function useOrganization(orgId?: string) {
     queryFn: async (): Promise<Organization> => {
       if (!currentOrgId) throw new Error('No organization ID');
       const response = await apiClient.get<Organization>(`/organizations/${currentOrgId}`);
+      if (!response.data) throw new Error('No organization data received');
       return response.data;
     },
     enabled: !!currentOrgId,
