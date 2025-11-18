@@ -48,6 +48,7 @@ export function useOrganization(orgId?: string) {
     queryKey: ['organizations'],
     queryFn: async (): Promise<Organization[]> => {
       const response = await apiClient.get<Organization[]>('/organizations');
+      if (!response.data) throw new Error('No organizations data received');
       return response.data;
     },
   });
